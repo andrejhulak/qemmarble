@@ -2,10 +2,7 @@ Marble QEM with RNN/LSTM/ANN
 
 So, to work with it,
 
-all the files that have 0000_ in front of their name are actual code. I will clean them up - also the RNN's aren't working correctly 
-as of right now I think (I'm finishing up a tutorial as I'm writing this), so I will remake them.
-
-I will provide generated circuits and I've made methods to save/load them - that way we can always experiment with the same random circuits. 
-(I will let it generate 4000 training and 800 testing circuits during the night today - can create even more to obtain better data)
-
-At some point I will also add a guide on the available methods - probably later.
+the method names should be pretty self-explanatory, but I will add some text to them so it makes
+more sense. The one RNN/LSTM one qubit idea should now be working properly. There are 5000 training
+and 1000 testing circuits in /data. I will start experimenting with the hyperparameters now and 
+try to put in the Transfomer architecture also.
