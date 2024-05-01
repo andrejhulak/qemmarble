@@ -1,4 +1,3 @@
-
 from qiskit.circuit.random import random_circuit
 from utils import generate_random_pauli_sum_op
 from utils import create_estimator_meas_data
