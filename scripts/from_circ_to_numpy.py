@@ -2,6 +2,7 @@ from qiskit.compiler import transpile
 from utils import get_backend_properties_v1
 from scripts.gate_dict_script import gate_dict_method
 import torch
+import json
 
 def get_qc_operations(qc, backend):
     qc = transpile(circuits=qc, 
@@ -12,7 +13,7 @@ def get_qc_operations(qc, backend):
         operations.append(operation)
     return operations
 
-# each word is -> gatetype, params, t1, t2, readout_error, gate_error, gate_length
+# each "word" is -> gatetype, params, t1, t2, readout_error, gate_error, gate_length
 
 def operations_to_features(circuits, true_exp_vals, n_qubits, backend):
     gate_dict = gate_dict_method()
@@ -75,3 +76,27 @@ def operations_to_features(circuits, true_exp_vals, n_qubits, backend):
         y.append(torch.tensor(exp_val).float())
         
     return X, y
+
+
+def save_to_json(X_train, y_train, X_test, y_test, filename):
+    X_train = [tensor.tolist() for tensor in X_train]
+    y_train = [tensor.tolist() for tensor in y_train]
+
+    X_test = [tensor.tolist() for tensor in X_test]
+    y_test = [tensor.tolist() for tensor in y_test]
+
+    data_to_save = {"X_train": X_train, "y_train": y_train, "X_test": X_test, "y_test": y_test}
+
+    with open(filename, 'w') as json_file:
+        json.dump(data_to_save, json_file)
+
+def load_from_json(filename):
+    with open(filename, 'r') as json_file:
+        data = json.load(json_file)
+
+    loaded_X_train = [torch.tensor(sublist).float() for sublist in data["X_train"]]
+    loaded_y_train = [torch.tensor(exp_val).float() for exp_val in data["y_train"]]
+    loaded_X_test = [torch.tensor(sublist).float() for sublist in data["X_test"]]
+    loaded_y_test = [torch.tensor(exp_val).float() for exp_val in data["y_test"]]
+
+    return loaded_X_train, loaded_y_train, loaded_X_test, loaded_y_test
