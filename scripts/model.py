@@ -169,8 +169,8 @@ def train_and_test_step(sequence_model, ann, loss_fn, optimiser, X_train, train_
     train_losses = []
     test_losses = []
     
-    for epoch in tqdm(range(num_epochs)):
-    #for epoch in range(num_epochs):
+    #for epoch in tqdm(range(num_epochs)):
+    for epoch in range(num_epochs):
 
         train_loss = train_step(sequence_model=sequence_model,
                                 ann=ann,
@@ -189,11 +189,13 @@ def train_and_test_step(sequence_model, ann, loss_fn, optimiser, X_train, train_
                               y=y_test,
                               noisy_first=noisy_first)
 
-        if epoch % 1 == 0 & print_results:
-            print(f"Epoch {epoch + 1}/{num_epochs}, train loss (PyTorch): {train_loss:.4f}, test_loss (scikitlearn rmse): {test_loss:.4f}")
+        # if epoch % 1 == 0 & print_results:
+        #     print(f"Epoch {epoch + 1}/{num_epochs}, train loss (PyTorch): {train_loss:.4f}, test_loss (scikitlearn rmse): {test_loss:.4f}")
 
-        train_losses.append(np.sqrt(train_loss))
-        test_losses.append(test_loss)
+        train_losses.append(np.sqrt(train_loss).item())
+        test_losses.append(test_loss.item())
+
+    return train_losses, test_losses
             
 
 def save_models(sequence_model, ann, sequence_config, ann_config, save_dir):

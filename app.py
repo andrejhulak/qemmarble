@@ -6,18 +6,20 @@ from scripts.data_setup import load_data
 from scripts.from_circ_to_numpy import operations_to_features, save_to_json, load_from_json
 from scripts.model import create_models, train_and_test_step, save_models, load_models
 
-n_qubits = 5 # 5 == n_qubits, default value for now because of FakeLima
-data_dir = 'data_small_1'
-train_circuits, train_observables, train_ideal_exp_vals, train_noisy_exp_vals, test_circuits, test_observables, test_ideal_exp_vals, test_noisy_exp_vals = load_data(f'data/circuits/{data_dir}')
-X_train, y_train, X_test, y_test = load_from_json(f'data/features/{data_dir}')
+dir_models = 'experiments/test_0'
+dir_data = 'data_small_1_test_1'
 
-sequence_hidden_size_list = [1, 2]
-sequence_num_layers_list = [1, 2]
+n_qubits = 5 # 5 == n_qubits, default value for now because of FakeLima
+train_circuits, train_observables, train_ideal_exp_vals, train_noisy_exp_vals, test_circuits, test_observables, test_ideal_exp_vals, test_noisy_exp_vals = load_data(f'data/circuits/{dir_data}')
+X_train, y_train, X_test, y_test = load_from_json(f'data/features/{dir_data}')
+
+sequence_hidden_size_list = [1, 2, 4, 8]
+sequence_num_layers_list = [1, 2, 4]
 sequence_type_list = ['RNN', 'LSTM']
 sequence_dropout_list = [0]
-ann_hidden_layers_list = [1, 2]
-ann_hidden_units_list = [16, 32]
-ann_dropout_list = [0, 0.1]
+ann_hidden_layers_list = [2, 4]
+ann_hidden_units_list = [32, 64]
+ann_dropout_list = [0]
 noisy_first_list = [True]
 
 model_int = 0
@@ -69,16 +71,16 @@ for i in range(len(sequence_hidden_size_list)):
                                 loss_fn = nn.MSELoss() # leave for now
                                 optimizer = optim.Adam(list(ann.parameters()) + list(sequence_model.parameters()), lr=0.001)
 
-                                num_epochs = 7
+                                num_epochs = 5
                                 train_losses, test_losses = train_and_test_step(sequence_model, ann, loss_fn, optimizer, X_train, train_noisy_exp_vals, y_train, X_test, test_noisy_exp_vals, y_test, num_epochs, noisy_first=noisy_first)
 
                                 save_models(sequence_model=sequence_model,
                                             ann=ann,
                                             sequence_config=sequence_config,
                                             ann_config=ann_config,
-                                            save_dir=f'experiments/test_1/models/model_{model_int}')
+                                            save_dir=f'{dir_models}/models/model_{model_int}')
                                 
-                                results_dir = f'experiments/test_1/results'
+                                results_dir = f'{dir_models}/results'
                                 if not os.path.exists(results_dir):
                                     os.makedirs(results_dir)
 
@@ -88,8 +90,8 @@ for i in range(len(sequence_hidden_size_list)):
                                 
                                 f'experiments/test_1/results/results_model_{model_int}'
 
-models_directory = 'experiments/test_1/models'
-results_directory = 'experiments/test_1/results'
+models_directory = f'{dir_models}/models'
+results_directory = f'{dir_models}/results'
 
 train_losses_dict = {}
 
