@@ -6,8 +6,8 @@ from scripts.data_setup import load_data
 from scripts.from_circ_to_numpy import operations_to_features, save_to_json, load_from_json
 from scripts.model import create_models, train_and_test_step, save_models, load_models
 
-dir_models = 'experiments/test_0'
-dir_data = 'data_small_1_test_1'
+dir_models = 'experiments/test_2'
+dir_data = 'data_small_1'
 
 n_qubits = 5 # 5 == n_qubits, default value for now because of FakeLima
 train_circuits, train_observables, train_ideal_exp_vals, train_noisy_exp_vals, test_circuits, test_observables, test_ideal_exp_vals, test_noisy_exp_vals = load_data(f'data/circuits/{dir_data}')
@@ -16,10 +16,10 @@ X_train, y_train, X_test, y_test = load_from_json(f'data/features/{dir_data}')
 sequence_hidden_size_list = [1, 2, 4, 8]
 sequence_num_layers_list = [1, 2, 4]
 sequence_type_list = ['RNN', 'LSTM']
-sequence_dropout_list = [0]
+sequence_dropout_list = [0, 0.1]
 ann_hidden_layers_list = [2, 4]
 ann_hidden_units_list = [32, 64]
-ann_dropout_list = [0]
+ann_dropout_list = [0, 0.1]
 noisy_first_list = [True]
 
 model_int = 0
