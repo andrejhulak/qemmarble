@@ -1,0 +1,1 @@
+{"input_size": 7, "hidden_size": 4, "num_layers": 1, "model_type": "RNN", "dropout": 0}
