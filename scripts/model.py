@@ -21,13 +21,14 @@ class SequenceModel(nn.Module):
         elif model_type == 'Transformer':
             #print('To be added soon, initialising with LSTM for now!')
             for i in range(5):
-                self.qubit_models[f'sequence_{i}'] = nn.Transformer(d_model=input_size, nhead=hidden_size, num_encoder_layers=num_layers, batch_first=True, dropout=p_dropout)
+                self.qubit_models[f'sequence_{i}'] =  nn.TransformerEncoderLayer(d_model=7, nhead=7, dropout=p_dropout)
+                #self.qubit_models[f'sequence_{i}'] = nn.Transformer(d_model=input_size, nhead=hidden_size, num_encoder_layers=num_layers, batch_first=True, dropout=p_dropout)
         
     def forward(self, x):
         models_output = []
         for i, model in enumerate(self.qubit_models.values()):
             if self.model_type == 'Transformer':
-                model_output = model(x[i], x[i]) # fix this
+                model_output = model(x[i])
             else:
                 model_output, _ = model(x[i])
             model_output_last = model_output[-1, :]   
@@ -97,7 +98,7 @@ def create_models(sequence_input_size: int,
 
     sequence_model = SequenceModel(input_size=sequence_input_size, hidden_size=sequence_hidden_size, num_layers=sequence_num_layers, model_type=sequence_model_type, p_dropout=sequence_dropout)
     if noisy_first == True:
-        ann = ANN(input_shape=(sequence_hidden_size * n_qubits + 1), hidden_units=ann_hidden_units, hidden_layers=ann_hiden_layers, output_shape=1, p_drouput=ann_dropout, noisy_first=noisy_first)
+        ann = ANN(input_shape= (sequence_hidden_size * n_qubits + 1), hidden_units=ann_hidden_units, hidden_layers=ann_hiden_layers, output_shape=1, p_drouput=ann_dropout, noisy_first=noisy_first)
     else:
         ann = ANN(input_shape=(sequence_hidden_size * n_qubits), hidden_units=ann_hidden_units, hidden_layers=ann_hiden_layers, output_shape=1, p_drouput=ann_dropout, noisy_first=noisy_first)
     return sequence_model, ann
@@ -149,7 +150,7 @@ def train_step(sequence_model, ann, loss_fn, X, noisy_exp_vals, y, optimiser, no
             optimiser.zero_grad()
             loss.backward()
             optimiser.step()
-    
+
     return train_loss/len(X)
 
 def test_step(sequence_model, ann, loss_fn, X, noisy_exp_vals, y, noisy_first):
