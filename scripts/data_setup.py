@@ -19,7 +19,9 @@ def create_data(n_qubits: int,
     backend = FakeLima()
 
     for i in range(max_entries):
-        circ_qubits = random.randint(1, n_qubits)
+        #circ_qubits = random.randint(1, n_qubits)
+
+        circ_qubits = n_qubits
 
         qc_depth = random.randint(1, circuit_depth)
 
@@ -77,7 +79,7 @@ def create_and_save_data(n_qubits: int,
                                                                                                 )
 
     test_circuits, test_observables, test_ideal_exp_vals, test_noisy_exp_vals = create_data(n_qubits=n_qubits,
-                                                                                            circuit_depth=circ_depth,
+                                                                                            circuit_depth=circ_depth*2,
                                                                                             pauli_terms=pauli_terms,
                                                                                             max_entries=n_test_circs
                                                                                             )

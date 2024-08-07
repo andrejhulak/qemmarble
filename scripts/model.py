@@ -5,6 +5,7 @@ import numpy as np
 from tqdm.auto import tqdm
 import json, os
 from sklearn.metrics import root_mean_squared_error
+import random
 
 class SequenceModel(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, model_type, p_dropout):
@@ -127,37 +128,33 @@ def run_models(sequence_model, ann, x, noisy_exp_val, noisy_first):
 def train_step(sequence_model, ann, loss_fn, X, noisy_exp_vals, y, optimiser, noisy_first):
     sequence_model.train()
     ann.train()
+    
+    # indices = list(range(len(X)))
+    # random.shuffle(indices)
 
-    batch_size = 25
-    num_batches = len(X) // batch_size
+    # X = [X[i] for i in indices]
+    # noisy_exp_vals = [noisy_exp_vals[i] for i in indices]
+    # y = [y[i] for i in indices]
 
     train_loss = 0
 
-    for batch_idx in range(num_batches):
-        start_idx = batch_idx * batch_size
-        end_idx = (batch_idx + 1) * batch_size
+    for i in range(len(X)):
+        y_pred = run_models(sequence_model, ann, X[i], noisy_exp_vals[i], noisy_first)
 
-        X_batch = X[start_idx:end_idx]
-        noisy_exp_vals_batch = noisy_exp_vals[start_idx:end_idx]
-        y_batch = y[start_idx:end_idx]
+        loss = loss_fn(y_pred, y[i].unsqueeze(dim=0))
+        train_loss += loss.item()
 
-        for i in range(len(X_batch)):
-            y_pred = run_models(sequence_model, ann, X_batch[i], noisy_exp_vals_batch[i], noisy_first)
+        optimiser.zero_grad()
+        loss.backward()
+        optimiser.step()
 
-            loss = loss_fn(y_pred, y_batch[i].unsqueeze(dim=0))
-            train_loss += loss.item()
+    return train_loss / len(X)
 
-            optimiser.zero_grad()
-            loss.backward()
-            optimiser.step()
-
-    return train_loss/len(X)
 
 def test_step(sequence_model, ann, loss_fn, X, noisy_exp_vals, y, noisy_first):
     sequence_model.eval()
     ann.eval()
 
-    test_loss = 0
     y_pred = []
     
     with torch.inference_mode():
@@ -190,8 +187,8 @@ def train_and_test_step(sequence_model, ann, loss_fn, optimiser, X_train, train_
                               y=y_test,
                               noisy_first=noisy_first)
 
-        # if epoch % 1 == 0 & print_results:
-        #     print(f"Epoch {epoch + 1}/{num_epochs}, train loss (PyTorch): {train_loss:.4f}, test_loss (scikitlearn rmse): {test_loss:.4f}")
+        if epoch % 1 == 0 & print_results:
+            print(f"Epoch {epoch + 1}/{num_epochs}, train loss (PyTorch): {np.sqrt(train_loss).item():.4f}, test_loss (scikitlearn rmse): {test_loss:.4f}")
 
         train_losses.append(np.sqrt(train_loss).item())
         test_losses.append(test_loss.item())

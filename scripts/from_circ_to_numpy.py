@@ -21,9 +21,7 @@ def operations_to_features(circuits, true_exp_vals, n_qubits, backend):
     X = []
     i = 0
     for qc in circuits:
-        #dag_circuit = circuit_to_dag(qc)
         circuit_instructions = get_qc_operations(qc, backend)
-        # CircuitInstruction(operation=Instruction(name='rz', num_qu .... :)))))))
         features = []
         for i in range(n_qubits):
             features.append([])
@@ -54,11 +52,15 @@ def operations_to_features(circuits, true_exp_vals, n_qubits, backend):
             else:
                 backend_op_name = f'{op_name}_{op_qubit_index}'
 
-            gate_error = backend_properties['gate_props'][backend_op_name]['gate_error']
-            gate_length = backend_properties['gate_props'][backend_op_name]['gate_length']
-            'sx_1'
+            gate_error = float('0')
+            gate_length = float('0')
 
-            qubit_feature = [op_encoded, op_params, 0, 0, 0, gate_error, gate_length]
+            if backend_op_name in backend_properties['gate_props']:
+                gate_error = backend_properties['gate_props'][backend_op_name]['gate_error']
+                gate_length = backend_properties['gate_props'][backend_op_name]['gate_length']
+
+            qubit_feature = [float(op_encoded), float(op_params), float('0'), float('0'), float('0'), float(gate_error), float(gate_length)]
+            #print(op_qubit_index)
             features[op_qubit_index].append(qubit_feature)
             #print(f'{op_encoded} | {op_params} | {op_qubit}')
 

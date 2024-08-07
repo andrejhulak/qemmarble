@@ -27,7 +27,9 @@ def gate_dict_method():
     "cu1",
     "cu3",
     "swap",
-    "rzz"]
+    "rzz",
+    "barrier",
+    "measure"]
     gate_dict = {}
     for i, gate in enumerate(gates):
         gate_dict[gate] = i
