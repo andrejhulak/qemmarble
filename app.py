@@ -7,6 +7,8 @@ from scripts.from_circ_to_numpy import operations_to_features
 from scripts.model import *
 import torch
 
+print('Hello world!')
+
 dir_models = 'experiment_models/ising'
 
 backend = FakeLima()
@@ -62,13 +64,13 @@ y_testing = torch.tensor(y_testing)
 train_noisy_exp_vals = torch.tensor(train_noisy_exp_vals)
 test_noisy_exp_vals = torch.tensor(test_noisy_exp_vals)
 
-sequence_hidden_size_list = [1, 2]
-sequence_num_layers_list = [1, 2]
+sequence_hidden_size_list = [1, 2, 4]
+sequence_num_layers_list = [1, 2, 4]
 sequence_type_list = ['LSTM']
-sequence_dropout_list = [0]
-ann_hidden_layers_list = [2]
-ann_hidden_units_list = [32]
-ann_dropout_list = [0]
+sequence_dropout_list = [0, 0.05, 0.1]
+ann_hidden_layers_list = [2, 4]
+ann_hidden_units_list = [32, 64]
+ann_dropout_list = [0, 0.05]
 noisy_first_list = [True]
 
 model_int = 0
