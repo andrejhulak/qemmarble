@@ -1,25 +1,74 @@
-import os, json
+import os, json, pickle
 import torch.optim as optim
 import torch.nn as nn
+from tqdm.notebook import tqdm
 from qiskit.providers.fake_provider import FakeLima
-from scripts.data_setup import load_data
-from scripts.from_circ_to_numpy import operations_to_features, save_to_json, load_from_json
-from scripts.model import create_models, train_and_test_step, save_models, load_models
+from scripts.from_circ_to_numpy import operations_to_features
+from scripts.model import *
+import torch
 
-dir_models = 'experiments/test_2'
-dir_data = 'data_small_1'
+dir_models = 'experiment_models/ising'
 
-n_qubits = 5 # 5 == n_qubits, default value for now because of FakeLima
-train_circuits, train_observables, train_ideal_exp_vals, train_noisy_exp_vals, test_circuits, test_observables, test_ideal_exp_vals, test_noisy_exp_vals = load_data(f'data/circuits/{dir_data}')
-X_train, y_train, X_test, y_test = load_from_json(f'data/features/{dir_data}')
+backend = FakeLima()
 
-sequence_hidden_size_list = [1, 2, 4, 8]
-sequence_num_layers_list = [1, 2, 4]
-sequence_type_list = ['RNN', 'LSTM']
-sequence_dropout_list = [0, 0.1]
-ann_hidden_layers_list = [2, 4]
-ann_hidden_units_list = [32, 64]
-ann_dropout_list = [0, 0.1]
+def load_circuits(data_dir, f_ext='.json'):
+    circuits = []
+    ideal_exp_vals = []
+    noisy_exp_vals = []
+    data_files = [os.path.join(data_dir, f) for f in os.listdir(data_dir) if f.endswith(f_ext)]
+    for data_file in tqdm(data_files[1:], leave=True):
+        if f_ext == '.pk':
+            for entry in pickle.load(open(data_file, 'rb')):
+                circuits.append(entry['circuit'])
+                ideal_exp_vals.append(entry['ideal_exp_value'])
+                noisy_exp_vals.append(entry['noisy_exp_values'])
+    return circuits, ideal_exp_vals, noisy_exp_vals
+
+train_circuits, train_ideal_exp_vals, train_noisy_exp_vals_input = load_circuits('data/ising_init_from_qasm_no_readout/train/', '.pk')
+print(len(train_circuits))
+
+test_circuits, test_ideal_exp_vals, test_noisy_exp_vals_input = load_circuits('data/ising_init_from_qasm_no_readout/val/', '.pk')
+print(len(test_circuits))
+
+train_noisy_exp_vals = [x[0] for x in train_noisy_exp_vals_input]
+test_noisy_exp_vals = [x[0] for x in test_noisy_exp_vals_input]
+
+X_train, y_train = operations_to_features(train_circuits, train_ideal_exp_vals, n_qubits=5, backend=backend)
+X_test, y_test = operations_to_features(test_circuits, test_ideal_exp_vals, n_qubits=5, backend=backend)
+
+print('Training and testing data converted to PyTorch!')
+
+n_qubits = 4
+num_epochs = 2
+
+y_training = []
+for y in range(n_qubits):
+    temp = []
+    for i in range(len(y_train)):
+        temp.append(y_train[i][y])
+    y_training.append(temp)
+
+y_training = torch.tensor(y_training)
+
+y_testing = []
+for y in range(n_qubits):
+    temp = []
+    for i in range(len(y_test)):
+        temp.append(y_test[i][y])
+    y_testing.append(temp)
+
+y_testing = torch.tensor(y_testing)
+
+train_noisy_exp_vals = torch.tensor(train_noisy_exp_vals)
+test_noisy_exp_vals = torch.tensor(test_noisy_exp_vals)
+
+sequence_hidden_size_list = [1, 2]
+sequence_num_layers_list = [1, 2]
+sequence_type_list = ['LSTM']
+sequence_dropout_list = [0]
+ann_hidden_layers_list = [2]
+ann_hidden_units_list = [32]
+ann_dropout_list = [0]
 noisy_first_list = [True]
 
 model_int = 0
@@ -43,16 +92,6 @@ for i in range(len(sequence_hidden_size_list)):
                                 ann_dropout = ann_dropout_list[o]
                                 noisy_first = noisy_first_list[p]
 
-                                sequence_model, ann = create_models(sequence_input_size, 
-                                                                    sequence_hidden_size, 
-                                                                    sequence_num_layers, 
-                                                                    sequence_model_type, 
-                                                                    sequence_dropout, 
-                                                                    ann_hidden_layers, 
-                                                                    ann_hidden_units, 
-                                                                    ann_dropout, 
-                                                                    noisy_first=noisy_first)
-
                                 sequence_config = { 
                                     "input_size": sequence_input_size,
                                     "hidden_size": sequence_hidden_size,
@@ -68,73 +107,37 @@ for i in range(len(sequence_hidden_size_list)):
                                     "noisy_first": noisy_first
                                 }
 
-                                loss_fn = nn.MSELoss() # leave for now
-                                optimizer = optim.Adam(list(ann.parameters()) + list(sequence_model.parameters()), lr=0.001)
+                                for q in range(n_qubits):
+                                    sequence_model, ann = create_models(sequence_input_size, 
+                                                                        sequence_hidden_size, 
+                                                                        sequence_num_layers, 
+                                                                        sequence_model_type, 
+                                                                        sequence_dropout, 
+                                                                        ann_hidden_layers, 
+                                                                        ann_hidden_units, 
+                                                                        ann_dropout, 
+                                                                        noisy_first=noisy_first)
+                                    loss_fn = nn.MSELoss()
+                                    optimizer = optim.Adam(list(ann.parameters()) + list(sequence_model.parameters()), lr=0.001)  
 
-                                num_epochs = 5
-                                train_losses, test_losses = train_and_test_step(sequence_model, ann, loss_fn, optimizer, X_train, train_noisy_exp_vals, y_train, X_test, test_noisy_exp_vals, y_test, num_epochs, noisy_first=noisy_first)
+                                    train_losses, test_losses = train_and_test_step(sequence_model, ann, loss_fn, optimizer, X_train, train_noisy_exp_vals[:, q], y_training[q], X_test, test_noisy_exp_vals[:, q], y_testing[q], num_epochs, noisy_first=noisy_first)
 
-                                save_models(sequence_model=sequence_model,
-                                            ann=ann,
-                                            sequence_config=sequence_config,
-                                            ann_config=ann_config,
-                                            save_dir=f'{dir_models}/models/model_{model_int}')
+                                    save_models(sequence_model=sequence_model,
+                                                ann=ann,
+                                                sequence_config=sequence_config,
+                                                ann_config=ann_config,
+                                                save_dir=f'{dir_models}/models/model_{model_int}_{q+1}')
                                 
-                                results_dir = f'{dir_models}/results'
-                                if not os.path.exists(results_dir):
-                                    os.makedirs(results_dir)
+                                    results_dir = f'{dir_models}/results'
+                                    if not os.path.exists(results_dir):
+                                        os.makedirs(results_dir)
 
-                                results_filename = os.path.join(results_dir, f'results_model_{model_int}.json')
-                                with open(results_filename, 'w') as f:
-                                    json.dump({"train_losses": train_losses, "test_losses": test_losses}, f)
-                                
-                                f'experiments/test_1/results/results_model_{model_int}'
+                                    results_filename = os.path.join(results_dir, f'results_model_{model_int}_{q+1}.json')
+                                    with open(results_filename, 'w') as f:
+                                        json.dump({"train_losses": train_losses, "test_losses": test_losses}, f)
 
-models_directory = f'{dir_models}/models'
-results_directory = f'{dir_models}/results'
-
-train_losses_dict = {}
-
-for result_file in os.listdir(results_directory):
-    if result_file.endswith('.json'):
-        result_path = os.path.join(results_directory, result_file)
-        with open(result_path, 'r') as f:
-            results = json.load(f)
-        train_losses_dict[result_file] = results['test_losses']
-
-top_5_models = sorted(train_losses_dict.items(), key=lambda x: min(x[1]))[:5]
-
-model_info_list = []
-
-for model_file, _ in top_5_models:
-    model_name = model_file.replace('results_', '').replace('.json', '')
-    model_path = f'{models_directory}/{model_name}'
-    sequence_model, ann = load_models(model_path)
-
-    with open(os.path.join(results_directory, model_file), "r") as f:
-        results = json.load(f)
-        test_loss = min(results['test_losses'])
-
-    with open(f'{model_path}/sequence_config.json', "r") as f:
-        sequence_config = json.load(f)
-
-    with open(f'{model_path}/ann_config.json', "r") as f:
-        ann_config = json.load(f)
-
-    model_info_list.append({
-        "model_name": model_name,
-        "sequence_config": sequence_config,
-        "ann_config": ann_config,
-        "test_loss": test_loss
-    })
-
-sorted_model_info_list = sorted(model_info_list, key=lambda x: x["test_loss"])
-
-for model_info in sorted_model_info_list:
-    print(f"Model: {model_info['model_name']}")
-    print("Sequence Config:")
-    print(model_info['sequence_config'])
-    print("ANN Config:")
-    print(model_info['ann_config'])
-    print(f"Test Loss: {model_info['test_loss']}")
-    print()
+                                    print(sequence_config)
+                                    print(ann_config)
+                                    print(train_losses)
+                                    print(test_losses)
+                                    print(q)

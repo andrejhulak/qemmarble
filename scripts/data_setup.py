@@ -1,6 +1,6 @@
 from qiskit.circuit.random import random_circuit
-from utils import generate_random_pauli_sum_op
-from utils import create_estimator_meas_data
+from scripts.utils import generate_random_pauli_sum_op
+from scripts.utils import create_estimator_meas_data
 import pickle, random
 from qiskit.providers.fake_provider import FakeLima
 
@@ -25,7 +25,7 @@ def create_data(n_qubits: int,
 
         qc_depth = random.randint(1, circuit_depth)
 
-        qc = random_circuit(circ_qubits, qc_depth)
+        qc = random_circuit(circ_qubits, qc_depth, measure=True)
 
         observable = generate_random_pauli_sum_op(circ_qubits, random.randint(1, pauli_terms), pauli_coeff)
 
@@ -79,7 +79,7 @@ def create_and_save_data(n_qubits: int,
                                                                                                 )
 
     test_circuits, test_observables, test_ideal_exp_vals, test_noisy_exp_vals = create_data(n_qubits=n_qubits,
-                                                                                            circuit_depth=circ_depth*2,
+                                                                                            circuit_depth=circ_depth,
                                                                                             pauli_terms=pauli_terms,
                                                                                             max_entries=n_test_circs
                                                                                             )

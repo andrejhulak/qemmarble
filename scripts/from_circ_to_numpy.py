@@ -1,5 +1,5 @@
 from qiskit.compiler import transpile
-from utils import get_backend_properties_v1
+from scripts.utils import get_backend_properties_v1
 from scripts.gate_dict_script import gate_dict_method
 import torch
 import json
@@ -61,8 +61,9 @@ def operations_to_features(circuits, true_exp_vals, n_qubits, backend):
 
             qubit_feature = [float(op_encoded), float(op_params), float('0'), float('0'), float('0'), float(gate_error), float(gate_length)]
             #print(op_qubit_index)
-            features[op_qubit_index].append(qubit_feature)
             #print(f'{op_encoded} | {op_params} | {op_qubit}')
+            features[op_qubit_index].append(qubit_feature)
+            
 
         max_length = max(len(sublist) for sublist in features)
         for sublist in features:
