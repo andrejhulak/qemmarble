@@ -1,0 +1,9 @@
+git lfs track random_circ_paper_experiment_30_40.pkl
+*.pkl filter=lfs diff=lfs merge=lfs -text
+random_circ_paper_experiment_30_40.pkl filter=lfs diff=lfs merge=lfs -text
+data/features/circ_14_18.json filter=lfs diff=lfs merge=lfs -text
+data/features/circ_14_18 filter=lfs diff=lfs merge=lfs -text
+data_features_circ_14_18 filter=lfs diff=lfs merge=lfs -text
+random_circ_paper_experiment_18_30.pkl filter=lfs diff=lfs merge=lfs -text
+data/features/* filter=lfs diff=lfs merge=lfs -text
+data/circuits/* filter=lfs diff=lfs merge=lfs -text
