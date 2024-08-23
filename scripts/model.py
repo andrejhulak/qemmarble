@@ -125,30 +125,36 @@ def run_models(sequence_model, ann, x, noisy_exp_val, noisy_first):
 
     return model_output
 
-def train_step(sequence_model, ann, loss_fn, X, noisy_exp_vals, y, optimiser, noisy_first):
+def train_step(sequence_model, ann, loss_fn, X, noisy_exp_vals, y, optimiser, noisy_first, accumulation_steps=10):
     sequence_model.train()
     ann.train()
-    
-    # indices = list(range(len(X)))
-    # random.shuffle(indices)
 
-    # X = [X[i] for i in indices]
-    # noisy_exp_vals = [noisy_exp_vals[i] for i in indices]
-    # y = [y[i] for i in indices]
+    indices = list(range(len(X)))
+    random.shuffle(indices)
 
-    train_loss = 0
+    X = [X[i] for i in indices]
+    noisy_exp_vals = [noisy_exp_vals[i] for i in indices]
+    y = [y[i] for i in indices]
+
+    optimiser.zero_grad()
+    train_loss = 0.0
+    total_loss = 0.0
 
     for i in range(len(X)):
         y_pred = run_models(sequence_model, ann, X[i], noisy_exp_vals[i], noisy_first)
+        current_loss = loss_fn(y_pred, y[i].unsqueeze(dim=0))
 
-        loss = loss_fn(y_pred, y[i].unsqueeze(dim=0))
-        train_loss += loss.item()
+        current_loss.backward()
+        total_loss += current_loss.item()
 
-        optimiser.zero_grad()
-        loss.backward()
-        optimiser.step()
+        if (i + 1) % accumulation_steps == 0 or (i + 1) == len(X):
+            optimiser.step()
+            optimiser.zero_grad() 
+            train_loss += total_loss / accumulation_steps
+            total_loss = 0.0 
 
-    return train_loss / len(X)
+    return train_loss / (len(X) // accumulation_steps + (1 if len(X) % accumulation_steps != 0 else 0))
+
 
 
 def test_step(sequence_model, ann, loss_fn, X, noisy_exp_vals, y, noisy_first):
@@ -161,7 +167,7 @@ def test_step(sequence_model, ann, loss_fn, X, noisy_exp_vals, y, noisy_first):
         for i in range(len(X)):
             y_pred.append(run_models(sequence_model, ann, X[i], noisy_exp_vals[i], noisy_first).detach().cpu().numpy())
     
-        return root_mean_squared_error(y, y_pred)
+    return root_mean_squared_error(y, y_pred)
 
 def train_and_test_step(sequence_model, ann, loss_fn, optimiser, X_train, train_noisy_exp_vals, y_train, X_test, test_noisy_exp_vals, y_test, num_epochs, noisy_first, print_results=True):
     train_losses = []

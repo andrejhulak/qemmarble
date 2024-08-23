@@ -9,7 +9,7 @@ import torch
 
 print('Hello world!')
 
-dir_models = 'experiment_models/ising'
+dir_models = 'experiment_models/ising_2'
 
 backend = FakeLima()
 
@@ -64,13 +64,13 @@ y_testing = torch.tensor(y_testing)
 train_noisy_exp_vals = torch.tensor(train_noisy_exp_vals)
 test_noisy_exp_vals = torch.tensor(test_noisy_exp_vals)
 
-sequence_hidden_size_list = [1, 2, 4]
-sequence_num_layers_list = [1, 2, 4]
+sequence_hidden_size_list = [32, 100, 1000]
+sequence_num_layers_list = [2]
 sequence_type_list = ['LSTM']
-sequence_dropout_list = [0, 0.05, 0.1]
-ann_hidden_layers_list = [2, 4]
-ann_hidden_units_list = [32, 64]
-ann_dropout_list = [0, 0.05]
+sequence_dropout_list = [0.05]
+ann_hidden_layers_list = [2]
+ann_hidden_units_list = [64]
+ann_dropout_list = [0]
 noisy_first_list = [True]
 
 model_int = 0

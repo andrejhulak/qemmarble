@@ -1,0 +1,1 @@
+{"input_size": 7, "hidden_size": 1, "num_layers": 1, "model_type": "LSTM", "dropout": 0.05}

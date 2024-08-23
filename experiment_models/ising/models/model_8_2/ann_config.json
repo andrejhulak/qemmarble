@@ -1,0 +1,1 @@
+{"hidden_layers": 4, "hidden_units": 64, "dropout": 0.05, "noisy_first": true}
